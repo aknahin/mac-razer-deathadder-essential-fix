@@ -257,6 +257,9 @@ document.addEventListener("pointermove", (e) => { inZone = !!e.target.closest?.(
 document.addEventListener("pointerleave", () => { inZone = false; });
 
 const CHIP_INDEX = { left: 0, middle: 1, right: 2, back: 3, forward: 4 };
+// MouseEvent.button (0 left, 1 middle, 2 right, 3 back, 4 forward) → the mouse's own button
+// numbers (1 left, 2 right, 3 middle, 4 back, 5 forward). Not simply +1: middle and right swap.
+const HID_BUTTON = { 0: 1, 1: 3, 2: 2, 3: 4, 4: 5 };
 function flash(name) {
   const chip = $(`.chip[data-test="${CHIP_INDEX[name]}"]`);
   const part = $(`#mouse .anchors [data-for="${name}"]`);
@@ -284,7 +287,7 @@ document.addEventListener("mousedown", (e) => {
   if (!e.target.closest(ZONES)) return;
   // A left click on a callout or hotspot is a selection, not a test press.
   if (e.button === 0 && e.target.closest("[data-button]")) return;
-  const name = buttonFor({ type: "mouse", value: e.button + 1 });
+  const name = buttonFor({ type: "mouse", value: HID_BUTTON[e.button] });
   if (name) pressed(name);
 });
 // Stop side buttons and ⌘[ / ⌘] from navigating away from the app.
