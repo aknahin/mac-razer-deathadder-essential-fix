@@ -224,21 +224,12 @@ $("#quit").addEventListener("click", async () => {
   document.body.append(d);
 });
 
-// ---------- colourway ----------
-function setColor(c) {
-  document.body.dataset.color = c;
-  $$(".swatch").forEach((s) => s.classList.toggle("is-active", s.dataset.color === c));
-  try { localStorage.setItem("color", c); } catch {}
-}
-$$(".swatch").forEach((s) => s.addEventListener("click", () => setColor(s.dataset.color)));
-setColor((() => { try { return localStorage.getItem("color"); } catch { return null; } })() || "black");
-
 // ---------- live tester ----------
 const SVG_FOR_EVENT = { 0: "left", 1: "middle", 2: "right", 3: "back", 4: "forward" };
 function flash(index) {
   const chip = $(`.chip[data-test="${index}"]`);
   chip?.classList.add("is-on");
-  const part = $(`#mouse .hit[data-button="${SVG_FOR_EVENT[index]}"]`);
+  const part = $(`#mouse .anchors [data-for="${SVG_FOR_EVENT[index]}"]`);
   part?.classList.add("is-flash");
   setTimeout(() => { chip?.classList.remove("is-on"); part?.classList.remove("is-flash"); }, 260);
 }

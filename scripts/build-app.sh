@@ -83,4 +83,12 @@ codesign --force --deep --sign - "$APP" >/dev/null
 echo "→ Zipping"
 (cd "$DIST" && rm -f "$APP_NAME.zip" && ditto -c -k --keepParent "$APP_NAME.app" "$APP_NAME.zip")
 
-echo "✓ Built $APP and $DIST/$APP_NAME.zip"
+echo "→ Creating disk image"
+STAGE="$(mktemp -d)"
+cp -R "$APP" "$STAGE/"
+ln -s /Applications "$STAGE/Applications"
+rm -f "$DIST/$APP_NAME.dmg"
+hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -fs HFS+ -format UDZO -ov "$DIST/$APP_NAME.dmg" >/dev/null
+rm -rf "$STAGE"
+
+echo "✓ Built $APP, $DIST/$APP_NAME.dmg and $DIST/$APP_NAME.zip"

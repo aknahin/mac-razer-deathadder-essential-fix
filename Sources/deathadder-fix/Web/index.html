@@ -35,83 +35,41 @@
     </div>
 
     <div class="stage">
-      <svg id="mouse" class="mouse" viewBox="0 0 800 600" role="img" aria-label="DeathAdder Essential, top view">
+      <!-- One coordinate space (1600×1100) for the photo, leader lines and hotspots. -->
+      <svg id="mouse" class="mouse" viewBox="0 0 1600 1100" role="img" aria-label="Razer DeathAdder Essential">
         <defs>
-          <linearGradient id="g-body" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" style="stop-color:var(--m-edge)"/>
-            <stop offset=".42" style="stop-color:var(--m-body)"/>
-            <stop offset=".62" style="stop-color:var(--m-hi)"/>
-            <stop offset="1" style="stop-color:var(--m-edge)"/>
-          </linearGradient>
-          <linearGradient id="g-shine" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#fff" stop-opacity=".18"/>
-            <stop offset=".5" stop-color="#fff" stop-opacity="0"/>
-          </linearGradient>
-          <radialGradient id="g-glow">
-            <stop offset="0" style="stop-color:var(--accent)" stop-opacity=".95"/>
-            <stop offset=".45" style="stop-color:var(--accent)" stop-opacity=".35"/>
-            <stop offset="1" style="stop-color:var(--accent)" stop-opacity="0"/>
+          <radialGradient id="g-halo">
+            <stop offset="0" stop-color="#3ee6a0" stop-opacity=".16"/>
+            <stop offset="1" stop-color="#3ee6a0" stop-opacity="0"/>
           </radialGradient>
-          <filter id="f-shadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="18"/>
-          </filter>
-          <path id="body-path" d="M398 42C455 40 500 78 512 150C522 215 530 300 532 380C534 480 490 562 405 562C330 562 290 515 286 440C283 390 300 360 298 318C296 270 276 236 280 180C286 95 340 44 398 42Z"/>
-          <clipPath id="clip-body"><use href="#body-path"/></clipPath>
         </defs>
+        <ellipse cx="980" cy="560" rx="560" ry="460" fill="url(#g-halo)"/>
+        <image href="mouse.png" x="440" y="60" width="1060" height="969" class="photo"/>
 
-        <ellipse cx="410" cy="320" rx="150" ry="262" fill="#000" opacity=".55" filter="url(#f-shadow)"/>
-
-        <!-- side buttons sit behind the shell edge -->
-        <rect class="hit side" data-button="forward" x="264" y="218" width="28" height="62" rx="11"/>
-        <rect class="hit side" data-button="back" x="274" y="288" width="28" height="64" rx="11"/>
-
-        <use href="#body-path" fill="url(#g-body)"/>
-        <g clip-path="url(#clip-body)">
-          <path class="hit" data-button="left" d="M280 30H399V222Q340 230 280 218Z"/>
-          <path class="hit" data-button="right" d="M401 30H540V214Q465 230 401 222Z"/>
-          <path d="M280 30H530V300H280Z" fill="url(#g-shine)" pointer-events="none"/>
-          <path d="M276 218Q400 238 530 212" class="seam"/>
-          <path d="M400 44V222" class="seam"/>
-          <circle cx="400" cy="468" r="46" fill="url(#g-glow)" class="glow"/>
-          <path d="M386 452q14-10 28 0q-6 10-14 32q-8-22-14-32Z" style="fill:var(--accent)" opacity=".85" class="glow"/>
-        </g>
-
-        <g class="hit" data-button="middle">
-          <rect x="386" y="92" width="28" height="70" rx="14" class="wheel-well"/>
-          <rect x="391" y="98" width="18" height="58" rx="9" class="wheel"/>
-          <path d="M391 108h18M391 116h18M391 124h18M391 132h18M391 140h18M391 148h18" class="wheel-ribs"/>
-        </g>
-
-        <!-- callout leader lines -->
         <g class="leaders">
-          <path data-for="left" d="M196 118H300L338 132"/>
-          <path data-for="right" d="M604 96H520L470 130"/>
-          <path data-for="middle" d="M604 186H470L414 128"/>
-          <path data-for="forward" d="M172 236H236L266 250"/>
-          <path data-for="back" d="M172 348H240L276 322"/>
+          <path data-for="middle" d="M330 150H560L746 199"/>
+          <path data-for="left" d="M330 290H560L718 301"/>
+          <path data-for="forward" d="M330 430H520L646 466"/>
+          <path data-for="back" d="M330 570H600L769 542"/>
+          <path data-for="right" d="M1270 150H1080L944 217"/>
         </g>
         <g class="anchors">
-          <circle data-for="left" cx="338" cy="132" r="6"/>
-          <circle data-for="right" cx="470" cy="130" r="6"/>
-          <circle data-for="middle" cx="414" cy="128" r="6"/>
-          <circle data-for="forward" cx="266" cy="250" r="6"/>
-          <circle data-for="back" cx="276" cy="322" r="6"/>
+          <g data-for="middle" transform="translate(746 199)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="middle" r="44"/></g>
+          <g data-for="left" transform="translate(718 301)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="left" r="44"/></g>
+          <g data-for="forward" transform="translate(646 466)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="forward" r="44"/></g>
+          <g data-for="back" transform="translate(769 542)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="back" r="44"/></g>
+          <g data-for="right" transform="translate(944 217)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="right" r="44"/></g>
         </g>
       </svg>
 
-      <button class="callout" data-button="left" style="left:24.5%;top:19.6%" data-side="l"><span class="c-title">Left button</span><span class="c-sub" data-label="left">—</span></button>
-      <button class="callout" data-button="right" style="left:75.5%;top:16%" data-side="r"><span class="c-title">Right button</span><span class="c-sub" data-label="right">—</span></button>
-      <button class="callout" data-button="middle" style="left:75.5%;top:31%" data-side="r"><span class="c-title">Scroll wheel</span><span class="c-sub" data-label="middle">—</span></button>
-      <button class="callout" data-button="forward" style="left:21.5%;top:39.3%" data-side="l"><span class="c-title">Front side button</span><span class="c-sub" data-label="forward">—</span></button>
-      <button class="callout" data-button="back" style="left:21.5%;top:58%" data-side="l"><span class="c-title">Rear side button</span><span class="c-sub" data-label="back">—</span></button>
+      <button class="callout" data-button="middle" style="left:20.62%;top:13.64%" data-side="l"><span class="c-title">Scroll wheel</span><span class="c-sub" data-label="middle">—</span></button>
+      <button class="callout" data-button="left" style="left:20.62%;top:26.36%" data-side="l"><span class="c-title">Left button</span><span class="c-sub" data-label="left">—</span></button>
+      <button class="callout" data-button="forward" style="left:20.62%;top:39.09%" data-side="l"><span class="c-title">Front side button</span><span class="c-sub" data-label="forward">—</span></button>
+      <button class="callout" data-button="back" style="left:20.62%;top:51.82%" data-side="l"><span class="c-title">Rear side button</span><span class="c-sub" data-label="back">—</span></button>
+      <button class="callout" data-button="right" style="left:79.38%;top:13.64%" data-side="r"><span class="c-title">Right button</span><span class="c-sub" data-label="right">—</span></button>
     </div>
 
     <div class="stage-foot">
-      <div class="swatches" role="radiogroup" aria-label="Mouse colour">
-        <button class="swatch" data-color="black" aria-label="Black" style="--sw:#1d1f23"></button>
-        <button class="swatch" data-color="white" aria-label="White" style="--sw:#eceef1"></button>
-        <button class="swatch" data-color="pink" aria-label="Pink" style="--sw:#f2bfd0"></button>
-      </div>
       <div class="meta" id="meta">Firmware — · Mode —</div>
     </div>
   </section>

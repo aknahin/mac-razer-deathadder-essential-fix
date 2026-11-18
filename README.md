@@ -44,7 +44,7 @@ No macOS setting, driver, or remapper can fix this, because the signal never lea
   - **Any key combination** you record (⌘ ⌥ ⌃ ⇧ + letters, digits, F-keys, arrows, and more)
 - **Stored on the mouse:** it works without the app running, after reboots, and on other computers.
 - **Live tester:** press any button and watch it light up.
-- **Polished local UI:** an interactive mouse diagram with Black / White / Pink colourways.
+- **Polished local UI:** click any button on the mouse photo to configure it.
 - **Safe by design:**
   - Left and right click can't be remapped, so you can't lock yourself out.
   - The UI is served only on `127.0.0.1` and protected by a per-launch token.
@@ -55,8 +55,8 @@ No macOS setting, driver, or remapper can fix this, because the signal never lea
 
 ### Option A: download the app
 
-1. Download **`DeathAdder Fix.zip`** from the [latest release](../../releases/latest) and unzip it.
-2. Move **DeathAdder Fix.app** to `/Applications`.
+1. Download **`DeathAdder Fix.dmg`** from the [latest release](../../releases/latest).
+2. Open it and drag **DeathAdder Fix** onto **Applications**.
 3. The first time, **right-click → Open** (the app is ad-hoc signed, not notarised).
 4. Your browser opens the DeathAdder Fix page. Click **Fix side buttons**, or pick any action.
 
@@ -69,7 +69,7 @@ Requires the Xcode Command Line Tools (`xcode-select --install`).
 ```bash
 git clone https://github.com/aknahin/mac-razer-deathadder-essential-fix.git
 cd mac-razer-deathadder-essential-fix
-./scripts/build-app.sh          # → dist/DeathAdder Fix.app (universal)
+./scripts/build-app.sh          # → dist/DeathAdder Fix.app, .dmg and .zip (universal)
 open "dist/DeathAdder Fix.app"
 ```
 
@@ -178,7 +178,7 @@ Only the **DeathAdder Essential (USB `1532:0098`)** has been tested. Other Razer
 
 ## Disclaimer
 
-This project is **not affiliated with, endorsed by, or sponsored by Razer Inc.** "Razer" and "DeathAdder" are trademarks of Razer Inc. They are used here only to identify compatible hardware. The mouse illustration is original artwork. It writes to your mouse's onboard memory at your own risk. Everything it changes can be undone with **Reset all to defaults**.
+This project is **not affiliated with, endorsed by, or sponsored by Razer Inc.** "Razer", "DeathAdder" and the Razer logo are trademarks of Razer Inc. The product photo is © Razer Inc. Both are used here only to identify the supported hardware. DeathAdder Fix writes to your mouse's onboard memory at your own risk. Everything it changes can be undone with **Reset all to defaults**.
 
 ## License
 

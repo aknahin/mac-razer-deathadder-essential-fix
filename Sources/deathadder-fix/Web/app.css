@@ -15,18 +15,9 @@
   --danger: #ff6b6b;
   --radius: 14px;
 
-  /* mouse colourway (black default) */
-  --m-body: #2a2d33;
-  --m-hi: #3a3e46;
-  --m-edge: #121317;
-  --m-seam: rgba(0, 0, 0, .65);
-  --m-wheel: #0d0e11;
-  --m-rib: #4a4f59;
 
   color-scheme: dark;
 }
-body[data-color="white"] { --m-body: #e7e9ec; --m-hi: #fbfcfd; --m-edge: #b9bdc5; --m-seam: rgba(0,0,0,.28); --m-wheel: #2b2e34; --m-rib: #5a5f69; }
-body[data-color="pink"]  { --m-body: #efb9cb; --m-hi: #f9d6e2; --m-edge: #c98aa0; --m-seam: rgba(80,20,40,.35); --m-wheel: #3a2a31; --m-rib: #77606a; }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -94,29 +85,22 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .banner-body span { color: var(--muted); font-size: 13px; }
 
 /* ---------- stage + mouse ---------- */
-.stage { position: relative; width: 100%; aspect-ratio: 4 / 3; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 11; }
 .mouse { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
-.seam { fill: none; stroke: var(--m-seam); stroke-width: 2.2; }
-.wheel-well { fill: #050506; }
-.wheel { fill: var(--m-wheel); }
-.wheel-ribs { stroke: var(--m-rib); stroke-width: 2; }
-.glow { transition: opacity .3s; }
+.photo { filter: drop-shadow(0 40px 60px rgba(0,0,0,.7)); }
 
-.hit { fill: transparent; transition: fill .18s; cursor: pointer; }
-rect.hit.side { fill: var(--m-body); stroke: rgba(255,255,255,.16); stroke-width: 1.5; }
-body[data-color="white"] rect.hit.side, body[data-color="pink"] rect.hit.side { stroke: rgba(0,0,0,.25); }
-.hit:hover { fill: rgba(62,230,160,.14); }
-rect.hit.side:hover { fill: color-mix(in srgb, var(--accent) 35%, var(--m-edge)); }
-.hit.is-selected, rect.hit.is-selected { fill: rgba(62,230,160,.24); }
-rect.hit.is-selected { fill: var(--accent) !important; }
-g.hit.is-selected .wheel { fill: var(--accent); }
-.hit.is-flash { fill: rgba(62,230,160,.55) !important; }
-
-.leaders path { fill: none; stroke: var(--line-2); stroke-width: 1.6; transition: stroke .2s; }
-.anchors circle { fill: var(--bg); stroke: var(--muted); stroke-width: 2; transition: all .2s; }
+.leaders path { fill: none; stroke: var(--line-2); stroke-width: 2.4; transition: stroke .2s; }
 .leaders path.is-selected { stroke: var(--accent); }
-.anchors circle.is-selected { fill: var(--accent); stroke: var(--accent); }
+
+.anchors .ring { fill: rgba(11,12,15,.45); stroke: rgba(255,255,255,.55); stroke-width: 2.5; transition: all .2s; }
+.anchors .pin { fill: #fff; transition: all .2s; }
+.anchors .hit { fill: transparent; cursor: pointer; }
+.anchors g:hover .ring { stroke: var(--accent); }
+.anchors g.is-selected .ring { stroke: var(--accent); fill: var(--accent-soft); stroke-width: 3.5; }
+.anchors g.is-selected .pin { fill: var(--accent); }
+.anchors g.is-flash .ring { fill: var(--accent); stroke: var(--accent); animation: ping .45s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes ping { from { transform: scale(1.8); opacity: .3; } to { transform: scale(1); opacity: 1; } }
 
 .callout {
   position: absolute; transform: translate(-100%, -50%);
@@ -134,14 +118,7 @@ g.hit.is-selected .wheel { fill: var(--accent); }
 .c-sub { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 640px) { .callout { min-width: 0; padding: 6px 8px; } .c-sub { display: none; } }
 
-.stage-foot { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; }
-.swatches { display: flex; gap: 8px; }
-.swatch {
-  width: 22px; height: 22px; border-radius: 50%; background: var(--sw);
-  border: 2px solid var(--line-2); padding: 0; transition: transform .15s;
-}
-.swatch:hover { transform: scale(1.1); }
-.swatch.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.stage-foot { display: flex; align-items: center; justify-content: flex-end; padding: 2px 4px; }
 .meta { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
 
 /* ---------- panel ---------- */
@@ -242,3 +219,5 @@ g.hit.is-selected .wheel { fill: var(--accent); }
 .btn-sm { padding: 6px 12px; font-size: 12.5px; }
 .quit-screen { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 50; text-align: center; color: var(--muted); }
 .quit-screen strong { display: block; color: var(--text); font-size: 18px; margin-bottom: 6px; }
+/* keep the photo vertically centred when the panel is taller than the stage */
+.stage { margin: auto 0; }
