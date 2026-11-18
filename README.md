@@ -80,6 +80,17 @@ Or run it straight from the source tree:
 swift run deathadder-fix        # opens the web UI
 ```
 
+## Using it
+
+<img src="docs/demo.gif" alt="Demo: fixing the side buttons, then remapping them to ⌘[ and ⌘] in a few clicks" width="900">
+
+1. **Fix:** if the side buttons are disabled in the mouse, the app turns them back on when it opens. The banner's **Fix side buttons** button does the same thing.
+2. **Pick a button:** click a label or a dot on the mouse. You can also point at the mouse and press the physical button.
+3. **Pick an action:** click a recommendation. It's written to the mouse immediately. For anything else, click **Custom shortcut** and press a key combination.
+4. **Test it:** point at the mouse or the **Live test** bar and press the button. Its dot lights up.
+
+Recommended for Mac users: set the side buttons to **Back (Mac apps) ⌘[** and **Forward (Mac apps) ⌘]**, so they work in Finder and Safari as well as in browsers.
+
 ## Command line
 
 ```text
@@ -175,6 +186,8 @@ swift build
 swift test                       # packet layout, CRC, encoding, shortcut parsing
 swift run deathadder-fix status  # talks to the real mouse
 ```
+
+The demo GIF is rendered from the real UI against a fake mouse, so it never touches hardware. To regenerate it, run `scripts/demo/make-demo-gif.sh` (needs Google Chrome and `ffmpeg`).
 
 Only the **DeathAdder Essential (USB `1532:0098`)** has been tested. Other Razer mice use the same protocol, but their button ids and transaction id may differ. PRs are welcome.
 
