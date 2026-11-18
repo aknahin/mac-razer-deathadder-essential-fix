@@ -3,6 +3,8 @@ import IOKit.hid
 
 public enum RazerError: Error, CustomStringConvertible {
     case notConnected
+    /// macOS refused to open the mouse: the app needs Input Monitoring permission.
+    case permissionDenied
     case openFailed(IOReturn)
     case transferFailed(IOReturn)
     case badStatus(RazerPacket.Status?)
@@ -10,6 +12,7 @@ public enum RazerError: Error, CustomStringConvertible {
     public var description: String {
         switch self {
         case .notConnected: "Razer DeathAdder Essential not found. Is it plugged in?"
+        case .permissionDenied: "macOS blocked access to the mouse. Allow DeathAdder Fix in System Settings → Privacy & Security → Input Monitoring."
         case .openFailed(let r): String(format: "Could not open the mouse (IOReturn 0x%08x).", r)
         case .transferFailed(let r): String(format: "USB transfer failed (IOReturn 0x%08x).", r)
         case .badStatus(let s): "Mouse rejected the command (status: \(s.map { "\($0)" } ?? "unknown"))."
@@ -49,16 +52,40 @@ public final class DeathAdderEssential {
             (IOHIDDeviceGetProperty($0, kIOHIDMaxFeatureReportSizeKey as CFString) as? Int ?? 0) >= RazerPacket.length
         }) else { throw RazerError.notConnected }
         let r = IOHIDDeviceOpen(device, IOOptionBits(kIOHIDOptionsTypeNone))
+        if r == kIOReturnNotPermitted { throw RazerError.permissionDenied }
         guard r == kIOReturnSuccess else { throw RazerError.openFailed(r) }
         return DeathAdderEssential(device: device)
     }
 
     public static var isConnected: Bool { (try? open()) != nil }
 
+    /// Whether macOS has granted Input Monitoring, which opening a mouse requires
+    /// for an app (a terminal grants it to the tools it runs).
+    public static var hasInputMonitoringAccess: Bool {
+        IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+    }
+
+    /// Shows the system prompt (first time only) and adds the app to the Input Monitoring list.
+    @discardableResult
+    public static func requestInputMonitoringAccess() -> Bool {
+        IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
+    }
+
     // MARK: - Transport
 
+    /// Sends a command, retrying once: the firmware occasionally drops a request
+    /// when another app talks to the mouse at the same moment.
     @discardableResult
     func send(commandClass: UInt8, commandID: UInt8, dataSize: UInt8, arguments: [UInt8] = []) throws -> RazerPacket {
+        do {
+            return try transfer(commandClass: commandClass, commandID: commandID, dataSize: dataSize, arguments: arguments)
+        } catch {
+            usleep(150_000)
+            return try transfer(commandClass: commandClass, commandID: commandID, dataSize: dataSize, arguments: arguments)
+        }
+    }
+
+    private func transfer(commandClass: UInt8, commandID: UInt8, dataSize: UInt8, arguments: [UInt8]) throws -> RazerPacket {
         let request = RazerPacket(transactionID: transactionID, commandClass: commandClass,
                                   commandID: commandID, dataSize: dataSize, arguments: arguments)
         let w = request.bytes.withUnsafeBufferPointer {

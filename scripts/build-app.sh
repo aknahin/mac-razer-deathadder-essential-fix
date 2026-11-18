@@ -25,16 +25,6 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/deathadder-fix" "$APP/Contents/MacOS/deathadder-fix"
 cp -R Sources/deathadder-fix/Web "$APP/Contents/Resources/Web"
 
-# Launcher: start the helper, which opens the UI in the browser. Opening the app
-# again while it runs is delivered to the helper as a reopen event (see AppDelegate).
-cat > "$APP/Contents/MacOS/launcher" <<'SH'
-#!/bin/bash
-DIR="$(cd "$(dirname "$0")" && pwd)"
-# A helper left over from a crash would hold the port; replace it.
-pkill -f "$DIR/deathadder-fix serve" 2>/dev/null && sleep 0.3
-exec "$DIR/deathadder-fix" serve
-SH
-chmod +x "$APP/Contents/MacOS/launcher"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -46,7 +36,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
-  <key>CFBundleExecutable</key><string>launcher</string>
+  <key>CFBundleExecutable</key><string>deathadder-fix</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
@@ -78,7 +68,9 @@ if [ -f "$ICONSET/icon_1024.png" ]; then
 fi
 
 echo "→ Ad-hoc signing"
-codesign --force --deep --sign - "$APP" >/dev/null
+# The helper must BE the bundle's executable and carry the bundle id: macOS ties the
+# Input Monitoring permission to that identity, and opening the mouse requires it.
+codesign --force --sign - --identifier "$BUNDLE_ID" "$APP" >/dev/null
 
 echo "→ Zipping"
 (cd "$DIST" && rm -f "$APP_NAME.zip" && ditto -c -k --keepParent "$APP_NAME.app" "$APP_NAME.zip")

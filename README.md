@@ -36,7 +36,8 @@ No macOS setting, driver, or remapper can fix this, because the signal never lea
 
 ## Features
 
-- **One-click fix:** restores the side buttons to Back / Forward.
+- **Automatic fix:** when the app opens (or the mouse is plugged in) and both side buttons are disabled, it turns them back on to Back / Forward. No clicks needed.
+- **One-click remapping:** click a recommendation and it's saved to the mouse immediately.
 - **Remap the side buttons and the wheel click** to:
   - Back / Forward (mouse buttons 4/5, used by browsers and VS Code)
   - **⌘[ / ⌘]**, i.e. Back / Forward in **Finder, Safari, Music** and other native Mac apps that ignore mouse button 4/5
@@ -48,7 +49,7 @@ No macOS setting, driver, or remapper can fix this, because the signal never lea
 - **Safe by design:**
   - Left and right click can't be remapped, so you can't lock yourself out.
   - The UI is served only on `127.0.0.1` and protected by a per-launch token.
-- **No permissions prompts:** it talks to the mouse's control channel, which doesn't need Input Monitoring.
+- **One permission, asked once:** macOS needs *Input Monitoring* for an app to talk to a mouse. The page walks you through it.
 - **CLI included** for scripting.
 
 ## Install
@@ -58,7 +59,7 @@ No macOS setting, driver, or remapper can fix this, because the signal never lea
 1. Download **`DeathAdder Fix.dmg`** from the [latest release](../../releases/latest).
 2. Open it and drag **DeathAdder Fix** onto **Applications**.
 3. The first time, **right-click → Open** (the app is ad-hoc signed, not notarised).
-4. Your browser opens the DeathAdder Fix page. Click **Fix side buttons**, or pick any action.
+4. Your browser opens the DeathAdder Fix page and the side buttons are fixed automatically. Click any button on the mouse to remap it.
 
 To quit, click **Quit** in the top-right corner. Your settings stay on the mouse.
 
@@ -164,6 +165,7 @@ DeathAdder Fix.app
 | The buttons broke again after using a Windows PC | Synapse rewrote the onboard memory. Click **Fix side buttons** again, or in Synapse set the buttons to *Mouse Button 4 / 5*. |
 | Back works in Chrome or Dia but not in Finder or Safari | Native Mac apps ignore mouse buttons 4/5. Assign **Back (Mac apps) ⌘[** / **Forward (Mac apps) ⌘]** instead. |
 | Karabiner-Elements rules for the mouse do nothing | If Karabiner is set to ignore the device, or lacks Input Monitoring, its rules won't apply. With DeathAdder Fix you usually don't need Karabiner at all. |
+| Page says **Permission needed** | macOS requires *Input Monitoring* for an app to talk to a mouse. Click **Open Settings** and switch on **DeathAdder Fix**. After installing a new version you may have to switch it off and on again, because the app is ad-hoc signed and macOS treats each build as a new app. |
 | "App can't be opened" | Right-click the app → **Open**, or run `xattr -dr com.apple.quarantine "/Applications/DeathAdder Fix.app"`. |
 
 ## Development

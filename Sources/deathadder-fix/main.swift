@@ -51,7 +51,8 @@ func printStatus(_ mouse: DeathAdderEssential) throws {
 }
 
 setvbuf(stdout, nil, _IOLBF, 0)
-var args = Array(CommandLine.arguments.dropFirst())
+// Launched from Finder: older macOS versions pass a "-psn_…" process serial number.
+var args = Array(CommandLine.arguments.dropFirst()).filter { !$0.hasPrefix("-psn_") }
 let command = args.isEmpty ? "serve" : args.removeFirst()
 
 switch command {
@@ -91,6 +92,11 @@ case "serve":
     }
     let server = WebServer(port: port)
     do { try server.start() } catch { fail("Could not start the web UI on port \(port): \(error)") }
+    if !DeathAdderEssential.hasInputMonitoringAccess {
+        print("Input Monitoring permission is needed to talk to the mouse; asking macOS.")
+        DeathAdderEssential.requestInputMonitoringAccess()
+    }
+    server.checkMouseNow()
     let url = URL(string: "http://127.0.0.1:\(port)/?token=\(server.token)")!
     print("DeathAdder Fix is running at \(url.absoluteString)")
     print("Press Ctrl+C to quit.")

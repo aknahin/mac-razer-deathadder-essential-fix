@@ -1,14 +1,19 @@
+import AppKit
 import Foundation
 import Network
 import RazerKit
 
 /// A tiny HTTP/1.1 server bound to 127.0.0.1 that serves the web UI and a JSON API.
 ///
-/// Every `/api/*` request must carry the per-launch token in an `X-Token` header,
+/// Every `/api/*` request must carry a secret token in an `X-Token` header,
 /// so other websites open in the browser can't drive the mouse.
 final class WebServer {
     let port: UInt16
-    let token = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+    let token = WebServer.loadOrCreateToken()
+    /// Whether the connected mouse has been checked for disabled side buttons yet.
+    private var checkedConnectedMouse = false
+    /// Set once the side buttons have been re-enabled automatically; reported to the UI.
+    private var autoFixed = false
     private var listener: NWListener?
     private let queue = DispatchQueue(label: "deathadder-fix.http")
     /// Serialises all USB traffic.
@@ -126,6 +131,11 @@ final class WebServer {
 
     private func api(_ method: String, _ path: String, _ body: Data, _ reply: @escaping Reply) {
         let input = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
+        if method == "POST", path == "/api/open-permission-settings" {
+            DeathAdderEssential.requestInputMonitoringAccess()
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+            return json(reply, 200, ["opened": true])
+        }
         if method == "POST", path == "/api/quit" {
             json(reply, 200, ["quitting": true])
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { exit(0) }
@@ -133,6 +143,7 @@ final class WebServer {
         }
         do {
             let mouse = try DeathAdderEssential.open()
+            autoFixIfNeeded(mouse)
             switch (method, path) {
             case ("GET", "/api/status"):
                 break
@@ -150,12 +161,52 @@ final class WebServer {
             default:
                 return json(reply, 404, ["error": "unknown endpoint"])
             }
-            json(reply, 200, try Self.status(of: mouse))
+            var status = try Self.status(of: mouse)
+            status["autoFixed"] = autoFixed
+            json(reply, 200, status)
         } catch RazerError.notConnected {
+            checkedConnectedMouse = false
             json(reply, 200, ["connected": false])
+        } catch RazerError.permissionDenied {
+            json(reply, 200, ["connected": true, "permission": "denied"])
         } catch {
             json(reply, 500, ["connected": true, "error": "\(error)"])
         }
+    }
+
+    /// Synapse leaves *both* side buttons disabled; that's the bug this app exists for, so
+    /// fix it as soon as the mouse is seen. A single disabled button is left alone, since
+    /// that's more likely a deliberate choice.
+    /// Runs the side-button check right away (called at launch).
+    func checkMouseNow() {
+        deviceQueue.async { if let mouse = try? DeathAdderEssential.open() { self.autoFixIfNeeded(mouse) } }
+    }
+
+    private func autoFixIfNeeded(_ mouse: DeathAdderEssential) {
+        guard !checkedConnectedMouse else { return }
+        checkedConnectedMouse = true
+        guard (try? mouse.action(for: .back)) == .disabled,
+              (try? mouse.action(for: .forward)) == .disabled else { return }
+        if (try? mouse.fixSideButtons()) != nil {
+            autoFixed = true
+            print("Side buttons were disabled in the mouse; restored them to Back / Forward.")
+        }
+    }
+
+    /// A random secret kept in Application Support, so browser tabs keep working
+    /// across relaunches of the app.
+    private static func loadOrCreateToken() -> String {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DeathAdder Fix", isDirectory: true)
+        let file = dir.appendingPathComponent("token")
+        if let saved = try? String(contentsOf: file, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+           saved.count == 32, saved.allSatisfy(\.isHexDigit) {
+            return saved
+        }
+        let fresh = (UUID().uuidString + UUID().uuidString).replacingOccurrences(of: "-", with: "").lowercased().prefix(32)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: file.path, contents: Data(fresh.utf8), attributes: [.posixPermissions: 0o600])
+        return String(fresh)
     }
 
     /// `{"type":"mouse","value":4}`, `{"type":"disabled"}` or `{"type":"keyboard","modifiers":8,"usage":47}`

@@ -25,6 +25,18 @@
 <main class="layout">
   <!-- Left: device stage -->
   <section class="stage-wrap">
+    <div id="perm" class="banner banner-perm" hidden>
+      <div class="banner-icon">🔒</div>
+      <div class="banner-body">
+        <strong>One-time permission needed</strong>
+        <span>macOS only lets apps talk to a mouse with <b>Input Monitoring</b> permission. Turn on <b>DeathAdder Fix</b> in the list, then come back. This page updates by itself.</span>
+      </div>
+      <button id="perm-open" class="btn btn-primary">Open Settings</button>
+    </div>
+    <div id="error" class="banner banner-error" hidden>
+      <div class="banner-icon">!</div>
+      <div class="banner-body"><strong>Couldn't talk to the mouse</strong><span id="error-text"></span></div>
+    </div>
     <div id="banner" class="banner" hidden>
       <div class="banner-icon">!</div>
       <div class="banner-body">
@@ -43,30 +55,30 @@
             <stop offset="1" stop-color="#3ee6a0" stop-opacity="0"/>
           </radialGradient>
         </defs>
-        <ellipse cx="980" cy="560" rx="560" ry="460" fill="url(#g-halo)"/>
-        <image href="mouse.png" x="440" y="60" width="1060" height="969" class="photo"/>
+        <ellipse cx="960" cy="580" rx="560" ry="440" fill="url(#g-halo)"/>
+        <image href="mouse.png" x="500" y="190" width="880" height="739" class="photo"/>
 
         <g class="leaders">
-          <path data-for="middle" d="M330 150H560L746 199"/>
-          <path data-for="left" d="M330 290H560L718 301"/>
-          <path data-for="forward" d="M330 430H520L646 466"/>
-          <path data-for="back" d="M330 570H600L769 542"/>
-          <path data-for="right" d="M1270 150H1080L944 217"/>
+          <path data-for="middle" d="M330 160H560L746 226"/>
+          <path data-for="left" d="M330 300H560L694 306"/>
+          <path data-for="forward" d="M330 440H520L655 468"/>
+          <path data-for="back" d="M330 580H600L752 520"/>
+          <path data-for="right" d="M1290 200H1100L927 268"/>
         </g>
         <g class="anchors">
-          <g data-for="middle" transform="translate(746 199)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="middle" r="44"/></g>
-          <g data-for="left" transform="translate(718 301)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="left" r="44"/></g>
-          <g data-for="forward" transform="translate(646 466)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="forward" r="44"/></g>
-          <g data-for="back" transform="translate(769 542)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="back" r="44"/></g>
-          <g data-for="right" transform="translate(944 217)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="right" r="44"/></g>
+          <g data-for="middle" transform="translate(746 226)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="middle" r="44"/></g>
+          <g data-for="left" transform="translate(694 306)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="left" r="44"/></g>
+          <g data-for="forward" transform="translate(655 468)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="forward" r="44"/></g>
+          <g data-for="back" transform="translate(752 520)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="back" r="44"/></g>
+          <g data-for="right" transform="translate(927 268)"><circle class="ring" r="22"/><circle class="pin" r="9"/><circle class="hit" data-button="right" r="44"/></g>
         </g>
       </svg>
 
-      <button class="callout" data-button="middle" style="left:20.62%;top:13.64%" data-side="l"><span class="c-title">Scroll wheel</span><span class="c-sub" data-label="middle">—</span></button>
-      <button class="callout" data-button="left" style="left:20.62%;top:26.36%" data-side="l"><span class="c-title">Left button</span><span class="c-sub" data-label="left">—</span></button>
-      <button class="callout" data-button="forward" style="left:20.62%;top:39.09%" data-side="l"><span class="c-title">Front side button</span><span class="c-sub" data-label="forward">—</span></button>
-      <button class="callout" data-button="back" style="left:20.62%;top:51.82%" data-side="l"><span class="c-title">Rear side button</span><span class="c-sub" data-label="back">—</span></button>
-      <button class="callout" data-button="right" style="left:79.38%;top:13.64%" data-side="r"><span class="c-title">Right button</span><span class="c-sub" data-label="right">—</span></button>
+      <button class="callout" data-button="middle" style="left:20.62%;top:14.55%" data-side="l"><span class="c-title">Scroll wheel</span><span class="c-sub" data-label="middle">—</span></button>
+      <button class="callout" data-button="left" style="left:20.62%;top:27.27%" data-side="l"><span class="c-title">Left button</span><span class="c-sub" data-label="left">—</span></button>
+      <button class="callout" data-button="forward" style="left:20.62%;top:40.00%" data-side="l"><span class="c-title">Front side button</span><span class="c-sub" data-label="forward">—</span></button>
+      <button class="callout" data-button="back" style="left:20.62%;top:52.73%" data-side="l"><span class="c-title">Rear side button</span><span class="c-sub" data-label="back">—</span></button>
+      <button class="callout" data-button="right" style="left:80.62%;top:18.18%" data-side="r"><span class="c-title">Right button</span><span class="c-sub" data-label="right">—</span></button>
     </div>
 
     <div class="stage-foot">
@@ -95,20 +107,19 @@
         <button id="record" class="record" type="button">
           <span class="rec-dot"></span><span id="record-text">Click, then press a key combination</span>
         </button>
-        <button id="record-apply" class="btn btn-primary" disabled>Assign</button>
       </div>
-      <p class="hint">Saved into the mouse's onboard memory — works without this app running, on any computer.</p>
+      <p class="hint">Click a recommendation or record a shortcut — it's saved to the mouse instantly and works without this app running.</p>
     </div>
 
     <div class="panel-foot">
-      <button id="fix" class="btn btn-ghost">Restore side buttons</button>
+      <button id="restore" class="btn btn-ghost">Restore this button</button>
       <button id="reset" class="btn btn-ghost">Reset all to defaults</button>
     </div>
   </aside>
 </main>
 
 <section class="tester">
-  <div class="tester-title">Live test <span>press any mouse button here</span></div>
+  <div class="tester-title">Live test <span>point here or at the mouse, then press any button</span></div>
   <div class="tester-chips">
     <span class="chip" data-test="0">Left</span>
     <span class="chip" data-test="2">Right</span>

@@ -97,18 +97,30 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 let state = { connected: null, buttons: {} };
-let selected = "back";
+let selected = (() => {
+  const b = new URLSearchParams(location.search).get("button");   // deep link, e.g. ?button=forward
+  return ["left", "right", "middle", "back", "forward"].includes(b) ? b : "back";
+})();
 let busy = false;
 let recorded = null;
+let lastError = null;    // last API error, shown in the page instead of failing silently
+let link = "ok";          // "ok" | "down" (helper unreachable) | "expired" (stale token)
+let shownAutoFix = false;
+const BUTTON_ID = { left: 1, right: 2, middle: 3, back: 4, forward: 5 };
 
 function render() {
   const pill = $("#device-pill");
-  pill.className = "pill " + (state.connected === null ? "pill-wait" : state.connected ? "pill-ok" : "pill-off");
-  $("#device-pill-text").textContent =
-    state.connected === null ? "Looking for mouse…" : state.connected ? "DeathAdder Essential connected" : "Mouse not connected";
+  const status =
+    link === "down" ? ["pill-off", "DeathAdder Fix isn't running — open the app again"] :
+    link === "expired" ? ["pill-off", "Old tab — open DeathAdder Fix again"] :
+    state.permission === "denied" ? ["pill-off", "Permission needed"] :
+    state.connected === null ? ["pill-wait", "Looking for mouse…"] :
+    state.connected ? ["pill-ok", "DeathAdder Essential connected"] : ["pill-off", "Mouse not connected"];
+  pill.className = "pill " + status[0];
+  $("#device-pill-text").textContent = status[1];
   $("#meta").textContent = state.connected
     ? `Firmware ${state.firmware} · ${state.mode === 0 ? "Normal mode" : "Driver mode 0x" + state.mode.toString(16)} · Settings stored on the mouse`
-    : "Plug the mouse in — this page updates automatically";
+    : link === "ok" ? "Plug the mouse in — this page updates automatically" : "";
 
   for (const name of Object.keys(BUTTONS)) {
     const a = state.buttons[name];
@@ -117,6 +129,9 @@ function render() {
     $(`.callout[data-button="${name}"]`)?.classList.toggle("is-off", a?.type === "disabled");
   }
 
+  $("#perm").hidden = state.permission !== "denied";
+  $("#error").hidden = !lastError || state.permission === "denied";
+  $("#error-text").textContent = lastError || "";
   const sideOff = state.connected && ["back", "forward"].some((b) => state.buttons[b]?.type === "disabled");
   $("#banner").hidden = !sideOff;
 
@@ -143,16 +158,18 @@ function render() {
     return b;
   }));
 
-  $("#record-apply").disabled = !recorded || !state.connected || busy;
-  for (const id of ["#fix", "#reset", "#banner-fix"]) $(id).disabled = !state.connected || busy;
+  $("#record").disabled = !state.connected || busy;
+  const atDefault = sameAction(state.buttons[selected], { type: "mouse", value: BUTTON_ID[selected] });
+  $("#restore").disabled = !state.connected || busy || cfg.locked || atDefault;
+  for (const id of ["#reset", "#banner-fix"]) $(id).disabled = !state.connected || busy;
 }
 
-function toast(msg, isError = false) {
+function toast(msg, isError = false, ms = 2600) {
   const t = $("#toast");
   t.textContent = msg;
   t.className = "toast is-on" + (isError ? " is-error" : "");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => (t.className = "toast"), 2600);
+  toast.timer = setTimeout(() => (t.className = "toast"), ms);
 }
 
 async function refresh() {
@@ -160,12 +177,16 @@ async function refresh() {
   try {
     const s = await api("/api/status");
     state = { buttons: {}, ...s };
-  } catch (e) {
-    state = { connected: false, buttons: {} };
-    if (/forbidden/.test(e.message)) {
-      $("#device-pill-text").textContent = "Session expired — relaunch DeathAdder Fix";
-      return;
+    link = "ok";
+    lastError = null;
+    if (s.autoFixed && !shownAutoFix) {
+      shownAutoFix = true;
+      toast("✓ Your side buttons were disabled in the mouse — turned them back on automatically");
     }
+  } catch (e) {
+    if (/forbidden/.test(e.message)) link = "expired";
+    else if (e instanceof TypeError) link = "down";         // helper not reachable
+    else lastError = e.message;  // shown in the page; the next poll retries
   }
   render();
 }
@@ -188,6 +209,8 @@ const assign = (action, name) =>
 // ---------- selection ----------
 function select(name) {
   selected = name;
+  recorded = null;
+  $("#record").classList.remove("has-value");
   stopRecording();
   render();
 }
@@ -207,13 +230,13 @@ $("#record").addEventListener("click", () => {
   $("#record-text").textContent = "Press a key combination…";
   render();
 });
-$("#record-apply").addEventListener("click", () => {
-  if (recorded) assign({ type: "keyboard", ...recorded });
-});
+
 
 // ---------- buttons ----------
-$("#fix").addEventListener("click", () => run("Side buttons restored to Back / Forward", () => api("/api/fix", {})));
+$("#restore").addEventListener("click", () =>
+  assign({ type: "mouse", value: BUTTON_ID[selected] }, "default"));
 $("#banner-fix").addEventListener("click", () => run("Side buttons fixed — try them now!", () => api("/api/fix", {})));
+$("#perm-open").addEventListener("click", () => api("/api/open-permission-settings", {}).catch(() => {}));
 $("#reset").addEventListener("click", () => run("All buttons reset to factory defaults", () => api("/api/reset", {})));
 
 $("#quit").addEventListener("click", async () => {
@@ -225,21 +248,49 @@ $("#quit").addEventListener("click", async () => {
 });
 
 // ---------- live tester ----------
-const SVG_FOR_EVENT = { 0: "left", 1: "middle", 2: "right", 3: "back", 4: "forward" };
-function flash(index) {
-  const chip = $(`.chip[data-test="${index}"]`);
+// Presses only count while the pointer is over the mouse picture or the live-test strip.
+// The physical button is found by matching the event against each button's current
+// assignment, so a side button remapped to ⌘V still lights up (and selects) itself.
+let inZone = false;
+const ZONES = ".stage-wrap, .tester";
+document.addEventListener("pointermove", (e) => { inZone = !!e.target.closest?.(ZONES); });
+document.addEventListener("pointerleave", () => { inZone = false; });
+
+const CHIP_INDEX = { left: 0, middle: 1, right: 2, back: 3, forward: 4 };
+function flash(name) {
+  const chip = $(`.chip[data-test="${CHIP_INDEX[name]}"]`);
+  const part = $(`#mouse .anchors [data-for="${name}"]`);
   chip?.classList.add("is-on");
-  const part = $(`#mouse .anchors [data-for="${SVG_FOR_EVENT[index]}"]`);
   part?.classList.add("is-flash");
   setTimeout(() => { chip?.classList.remove("is-on"); part?.classList.remove("is-flash"); }, 260);
 }
+
+/** Which physical button produced this action, given what's stored on the mouse. */
+function buttonFor(action) {
+  const hit = Object.keys(BUTTONS).find((n) => sameAction(state.buttons[n], action));
+  if (hit) return hit;
+  // Before the first status arrives, fall back to factory layout for mouse buttons.
+  if (action.type === "mouse") return Object.keys(BUTTON_ID).find((n) => BUTTON_ID[n] === action.value);
+  return null;
+}
+
+function pressed(name) {
+  flash(name);
+  if (name !== selected) select(name);
+}
+
 document.addEventListener("mousedown", (e) => {
-  flash(e.button);
-  if (e.button >= 3) e.preventDefault();
+  if (e.button >= 3) e.preventDefault();   // never let side buttons navigate away
+  if (!e.target.closest(ZONES)) return;
+  // A left click on a callout or hotspot is a selection, not a test press.
+  if (e.button === 0 && e.target.closest("[data-button]")) return;
+  const name = buttonFor({ type: "mouse", value: e.button + 1 });
+  if (name) pressed(name);
 });
 // Stop side buttons and ⌘[ / ⌘] from navigating away from the app.
 document.addEventListener("mouseup", (e) => { if (e.button >= 3) e.preventDefault(); });
 document.addEventListener("auxclick", (e) => { if (e.button >= 3) e.preventDefault(); });
+document.addEventListener("contextmenu", (e) => { if (e.target.closest(ZONES)) e.preventDefault(); });
 history.pushState(null, "", location.href);
 window.addEventListener("popstate", () => history.pushState(null, "", location.href));
 
@@ -258,19 +309,27 @@ document.addEventListener("keydown", (e) => {
     $("#record").classList.remove("is-recording");
     $("#record").classList.add("has-value");
     $("#record-text").textContent = formatCombo(mods, usage);
-    render();
+    assign({ type: "keyboard", ...recorded });
     return;
   }
 
-  if (usage && (mods || e.code.startsWith("F"))) {
+  if (e.metaKey && (e.code === "BracketLeft" || e.code === "BracketRight")) e.preventDefault();
+  if (!inZone || !usage) return;
+
+  const name = buttonFor({ type: "keyboard", modifiers: mods, usage });
+  if (name) {
+    e.preventDefault();                     // e.g. a button mapped to ⌘V shouldn't paste here
+    pressed(name);
+  }
+  if (name || mods || e.code.startsWith("F")) {
     $("#test-key").textContent = "Shortcut: " + formatCombo(mods, usage);
     $("#test-key").classList.add("is-on");
     setTimeout(() => $("#test-key").classList.remove("is-on"), 400);
   }
-  if (e.metaKey && (e.code === "BracketLeft" || e.code === "BracketRight")) e.preventDefault();
 });
 
 // ---------- boot ----------
 render();
 refresh();
 setInterval(refresh, 4000);
+setTimeout(() => { if (!shownAutoFix) toast("Tip: point at the mouse or the Live test bar, then press any button to select it", false, 5000); }, 900);
