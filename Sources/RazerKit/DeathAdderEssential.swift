@@ -73,17 +73,52 @@ public final class DeathAdderEssential {
 
     // MARK: - Transport
 
-    /// Sends a command, retrying once: the firmware occasionally drops a request
-    /// when another app talks to the mouse at the same moment.
+    /// Sends a command and returns the mouse's reply.
+    ///
+    /// The control channel is shared state: each command is a "set report" followed by a
+    /// "get report", and if another process (a second copy of this app, the CLI) slips its
+    /// own command in between, the reply belongs to the wrong request. Two defences:
+    /// an inter-process lock held for the whole set→get pair, and a check that the reply
+    /// echoes this request's command (and `echo` argument bytes) before it's trusted.
     @discardableResult
-    func send(commandClass: UInt8, commandID: UInt8, dataSize: UInt8, arguments: [UInt8] = []) throws -> RazerPacket {
-        do {
-            return try transfer(commandClass: commandClass, commandID: commandID, dataSize: dataSize, arguments: arguments)
-        } catch {
-            usleep(150_000)
-            return try transfer(commandClass: commandClass, commandID: commandID, dataSize: dataSize, arguments: arguments)
+    func send(commandClass: UInt8, commandID: UInt8, dataSize: UInt8, arguments: [UInt8] = [],
+              echo: Int = 0) throws -> RazerPacket {
+        var lastError: Error = RazerError.badStatus(.timeout)
+        for attempt in 0..<3 {
+            if attempt > 0 { usleep(150_000) }
+            do {
+                let reply = try Self.withControlLock {
+                    try transfer(commandClass: commandClass, commandID: commandID, dataSize: dataSize, arguments: arguments)
+                }
+                guard reply.commandClass == commandClass, reply.commandID == commandID,
+                      Array(reply.arguments.prefix(echo)) == Array(arguments.prefix(echo)) else {
+                    lastError = RazerError.badStatus(nil)   // a reply to someone else's request
+                    continue
+                }
+                return reply
+            } catch RazerError.badStatus(.notSupported) {
+                throw RazerError.badStatus(.notSupported)
+            } catch {
+                lastError = error
+            }
         }
+        throw lastError
     }
+
+    /// Holds an exclusive advisory lock shared by every process using RazerKit.
+    private static func withControlLock<T>(_ body: () throws -> T) throws -> T {
+        let fd = lockFD
+        if fd >= 0 { flock(fd, LOCK_EX) }
+        defer { if fd >= 0 { flock(fd, LOCK_UN) } }
+        return try body()
+    }
+
+    private static let lockFD: Int32 = {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("DeathAdder Fix", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return Darwin.open(dir.appendingPathComponent("usb.lock").path, O_CREAT | O_RDWR, 0o600)
+    }()
 
     private func transfer(commandClass: UInt8, commandID: UInt8, dataSize: UInt8, arguments: [UInt8]) throws -> RazerPacket {
         let request = RazerPacket(transactionID: transactionID, commandClass: commandClass,
@@ -126,7 +161,7 @@ public final class DeathAdderEssential {
     }
 
     public func action(for button: MouseButton, profile: UInt8 = 0x01) throws -> ButtonAction {
-        let r = try send(commandClass: 0x02, commandID: 0x8c, dataSize: 0x0a, arguments: [profile, button.rawValue, 0x00])
+        let r = try send(commandClass: 0x02, commandID: 0x8c, dataSize: 0x0a, arguments: [profile, button.rawValue, 0x00], echo: 2)
         return ButtonAction(encoded: r.arguments[11...])
     }
 

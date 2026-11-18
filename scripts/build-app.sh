@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 APP_NAME="DeathAdder Fix"
 BUNDLE_ID="io.github.aknahin.deathadder-fix"
-VERSION="${VERSION:-1.0.0}"
+VERSION="${VERSION:-1.1.0}"
 DIST="dist"
 APP="$DIST/$APP_NAME.app"
 
